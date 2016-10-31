@@ -10,21 +10,21 @@ public class Pacman {
 
 	int id;
 	Color culoare;
-	int directie;// sens trigonometric : 1 dreapta, 2 sus, 3 stanga, 4 jos
 	int x, y; // locatie
+	int addX, addY; // la locatie adauga mereu
+	int reqX, reqY; // variabile pentru a cere o noua directie
 	int stare; // bun sau rau
 	int scor;
-	private final int SIZE = 20;
+
 	private final int text_shift = 5;
-	final int SPEED = 2;
+	public static final int SPEED = 2;
 
 	// constructor
-	public Pacman(int id, Color culoare, int directie, int x, int y, int stare, int scor) {
+	public Pacman(int id, Color culoare, int x, int y, int stare, int scor) {
 		super();
 
 		this.id = id;
 		this.culoare = culoare;
-		this.directie = directie;
 		this.x = x;
 		this.y = y;
 		this.stare = stare;
@@ -32,28 +32,19 @@ public class Pacman {
 	}
 
 	// se misca pe directie daca nu intersecteaza labirintul atfel ramane pe loc
-	public void update(Maze lab) {
+	public void update(Maze maze) {
 
-		// TODO de verificat intersectia cu labirintul
-		if (lab.intersectie(this) == 0) {
-
-			switch (directie) {
-			case 1: // dreapta
-				x += SPEED;
-				break;
-			case 2: // sus
-				y -= SPEED;
-				break;
-			case 3: // stanga
-				x -= SPEED;
-				break;
-			case 4: // jos
-				y += SPEED;
-				break;
-
-			default:
-				break;
-			}
+		//TODO
+		//schimba directia doar daca poti, altfel addX addY vechi
+		if(maze.intersectie(this, reqX, reqY ) == 0){
+			addX = reqX;
+			addY = reqY;
+		}
+		
+		//adauga addX addY doar daca poti
+		if(maze.intersectie(this, addX, addY ) == 0){
+			x += SPEED * addX;
+			y += SPEED * addY;
 		}
 
 	}
@@ -61,14 +52,15 @@ public class Pacman {
 	// afisare jucatori
 	public void draw(Graphics2D g2d) {
 		g2d.setColor(culoare);
-		g2d.fillOval(x, y, SIZE, SIZE);
+		g2d.fillOval(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);
 		g2d.setColor(Color.white);
 		// centrare si afisare scor
-		g2d.drawString(Integer.toString(scor), x + SIZE / 3, y + 3 * SIZE / 4);
+		g2d.drawString(Integer.toString(scor), x + Board.DRAW_SIZE / 3, y + 3 * Board.DRAW_SIZE / 4);
 	}
 
-	public void set_directie(int dir) {
-		this.directie = dir;
+	public void req_directie(int reqX, int reqY) {
+		this.reqX = reqX;
+		this.reqY = reqY;
 	}
 
 }
