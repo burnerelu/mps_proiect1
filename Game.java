@@ -18,6 +18,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+/*
+ * Orice modificare asupra codului trebuie comentata
+ * Clasa Game se va ocupa 
+ */
 public class Game extends JPanel implements ActionListener {
 
 	int width, height;
@@ -29,24 +33,29 @@ public class Game extends JPanel implements ActionListener {
 	public final int UP = 2;
 	public final int LEFT = 3;
 	public final int DOWN = 4;
-
+	private static final int GAME_SPEED = 30; //cu cat mai mic cu atat mai repede
 	private Timer timer;
 
 	public Game() {
 		super();
 	}
 
+	/*
+	 * Constructor joc
+	 * Initilizeaza 
+	 * 
+	 * TODO initializarea trebuie facuta in functie de datele primite in urma ecranului 
+	 * LOBBY
+	 */
 	public Game(int w, int h) {
 		super();
-
-		// adaugam un obiect ce se ocupa cu controlul jocului (asculta
-		// tastatura)
-		addKeyListener(new Controller());
+ 
+		addKeyListener(new Controller());		// adaugam un obiect ce se ocupa cu controlul jocului (asculta tastatura)
 		setFocusable(true);
 		setDoubleBuffered(true);
 
 		// timer pentru repaint
-		this.timer = new Timer(40, this);
+		this.timer = new Timer(GAME_SPEED, this);
 		this.timer.start();
 
 		this.jucatori = jucatori;
@@ -58,36 +67,48 @@ public class Game extends JPanel implements ActionListener {
 
 	}
 
+	/*
+	 * Metoda ce initializeaza jucatorii
+	 * TODO trebuie legata cu informatiile primite de la ecranul de LOBBY
+	 */
 	private void initPlayers() {
 		
-		//TODO de legat cu LAN 
-		Point spawn;
-		spawn = labirint.respawnLocation();
-
 		jucatori = new ArrayList<Pacman>();
-		// (int id, Color culoare, int x, int y, int stare, int scor) {
-		jucatori.add(new Pacman(0, Color.green, spawn.x, spawn.y, 1, 8));
+		// (int id, Color culoare, int x, int y, int stare, int scor)
 		
-		jucatori.add(new Pacman(1, Color.cyan, 10, 110, 0, 0));
-		jucatori.add(new Pacman(2, Color.gray, 300, 10, 0, 0));
-		jucatori.add(new Pacman(3, Color.blue, 150, 10, 0, 0));
-		jucatori.add(new Pacman(4, Color.red, 100, 100, 0, 0));
-		jucatori.add(new Pacman(5, Color.yellow, 150, 150, 0, 0));
-		System.out.println(" il controlezi pe cel verde");
+		
+		//jucator verde
+		Point p1 = labirint.respawnLocation();
+		jucatori.add(new Pacman(0, Color.green, p1.x, p1.y, 1, 8));
+		
+		//jucator rosu
+		Point p2 = labirint.respawnLocation();
+		jucatori.add(new Pacman(1, Color.cyan, p2.x, p2.y, 1, 0));
+		
+		Point p3 = labirint.respawnLocation();
+		jucatori.add(new Pacman(2, Color.gray, p3.x, p3.y, 0, 0));
+		
+		Point p4 = labirint.respawnLocation();
+		jucatori.add(new Pacman(3, Color.blue, p4.x, p4.y, 0, 0));
+		
+		Point p5 = labirint.respawnLocation();
+		jucatori.add(new Pacman(4, Color.red, p5.x, p5.y, 0, 0));
+		
+		Point p6 = labirint.respawnLocation();
+		jucatori.add(new Pacman(5, Color.yellow, p6.x, p6.y, 0, 0));
 
 	}
 
-	@Override
-	
-public void addNotify() {
-		super.addNotify();
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
+	 * Se ocupa de desenarea elementelor pe tabla de joc
+	 * 
+	 * TODO trebuie sa desenam si ecranul de lobby
+	 */
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-
-		// TODO deseneaza : fereastra de search_server apoi lobby apoi joc
 
 		Graphics2D g2d = (Graphics2D) g;
 		// deseneaza fundal
@@ -97,6 +118,8 @@ public void addNotify() {
 		// deseneaza labirint
 		labirint.draw(g2d);
 
+		// TODO labirint.setNextDevil(); unde facem asta ?
+		
 		// deseneaza jucatori
 		for (Pacman pacman : jucatori) {
 			pacman.update(labirint);
@@ -104,29 +127,23 @@ public void addNotify() {
 		}
 
 		g2d.dispose(); // elibereaza resurse
-
 	}
 
 	class Controller extends KeyAdapter {
 
+
+				
+					 
+		/*
+		 * 			 (non-Javadoc)
+		 * @see java.awt.event.KeyAdapter#keyPressed(java.awt.event.KeyEvent)
+		 * 
+		 * Controlul jocului
+		 */
 		@Override
 		public void keyPressed(KeyEvent e) {
 
 			int key = e.getKeyCode();
-
-			// TODO cazuri de control pentru lobby
-			// (facem asta dupa ce facem conectarea intre calculatoare)
-
-			/*
-			 * trebuie controlata schimbarea de directie in felul urmator :
-			 * 
-			 * exemplu : daca merge in dreapta -> si da de un perete => se
-			 * opreste daca merge in dreapta si peretele e sub el si dam comanda
-			 * sa o ia in jos NU trebuie sa se opreasca ci sa retina comanda si
-			 * sa o ia in jos cand poate
-			 * 
-			 * (sa nu ramana lipit de pereti cand nu trebuie)
-			 */
 
 			switch (key) {
 			case KeyEvent.VK_RIGHT:
@@ -145,20 +162,37 @@ public void addNotify() {
 			case KeyEvent.VK_DOWN:
 				jucatori.get(0).req_directie(0, 1);
 				break;
+				
+			// W A S D
+			case KeyEvent.VK_D:
+				jucatori.get(1).req_directie(1, 0);
+				break;
+			case KeyEvent.VK_W:
+				jucatori.get(1).req_directie(0, -1);
+				break;
+			case KeyEvent.VK_A:
+				jucatori.get(1).req_directie(-1, 0);
+				break;
+			case KeyEvent.VK_S:
+				jucatori.get(1).req_directie(0, 1);
+				break;
+				
 
 			default:
 				break;
 			}
 		}
 
+		// TODO daca e nevoie putem folosi si asta
 		@Override
 		public void keyReleased(KeyEvent e) {
 
 			int key = e.getKeyCode();
 			if (key == Event.LEFT || key == Event.RIGHT || key == Event.UP || key == Event.DOWN) {
 
-				// TODO daca e nevoie putem folosi si asta
 			}
+			
+			
 		}
 	}
 

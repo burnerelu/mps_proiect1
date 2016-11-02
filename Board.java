@@ -4,6 +4,10 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
+/*
+ * Orice modificare asupra codului trebuie comentata
+ * 
+ */
 public class Board extends JFrame {
 
 	public static final int DENSITY = 40;
@@ -11,12 +15,7 @@ public class Board extends JFrame {
 	public static final int DRAW_SIZE = RESOLUTION / DENSITY;
 	
     public Board() {
-    /* VARIABILE de test */
-
-   	
-   	
-   	 
-   	/* */
+   
    	 add(new Game(RESOLUTION, RESOLUTION));
        
        setTitle("Pacman ACS");
