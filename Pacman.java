@@ -1,74 +1,116 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 
 /* 
+ * Orice modificare asupra codului trebuie comentata
  * Clasa ce reprezinta pacman
  * 
  * 
  */
 public class Pacman {
 
-	int id;
-	Color culoare;
-	int directie;// sens trigonometric : 1 dreapta, 2 sus, 3 stanga, 4 jos
-	int x, y; // locatie
-	int stare; // bun sau rau
-	int scor;
-	private final int SIZE = 20;
-	private final int text_shift = 5;
-	final int SPEED = 2;
+	int id;	//identificatorul jucatorului
+	Color culoare;	//culoare unica fiecarui jucator
+	int x, y; // locatia curenta a jucatorului
+	int addX, addY; // increment pentru locatie
+	int reqX, reqY; // variabile pentru a cere o noua directie
+	int devil; // bun 0 sau rau 1
+	int scor;	//scorul fiecarui jucatoru
 
-	// constructor
-	public Pacman(int id, Color culoare, int directie, int x, int y, int stare, int scor) {
+	
+	public static final int SPEED = 2;	//factor de viteza
+	public static final int DEVIL_SPEED = 2;	//factor de viteza
+
+	/*
+	 * Constructor jucator
+	 */
+	public Pacman(int id, Color culoare, int x, int y, int devil, int scor) {
 		super();
 
 		this.id = id;
 		this.culoare = culoare;
-		this.directie = directie;
 		this.x = x;
 		this.y = y;
-		this.stare = stare;
+		this.devil = devil;
 		this.scor = scor;
 	}
 
-	// se misca pe directie daca nu intersecteaza labirintul atfel ramane pe loc
-	public void update(Maze lab) {
+	/*
+	 * updateaza pozitia jucatorului tinand cont de intersectia cu labirintul
+	 * se misca pe directia initiala daca nu intersecteaza labirintul, atfel ramane pe loc
+	 */
+	public void update(Maze maze) {
 
-		// TODO de verificat intersectia cu labirintul
-		if (lab.intersectie(this) == 0) {
-
-			switch (directie) {
-			case 1: // dreapta
-				x += SPEED;
-				break;
-			case 2: // sus
-				y -= SPEED;
-				break;
-			case 3: // stanga
-				x -= SPEED;
-				break;
-			case 4: // jos
-				y += SPEED;
-				break;
-
-			default:
-				break;
+		//schimba directia doar daca poti, altfel addX addY vechi
+		if(maze.intersectie(this.x, this.y, reqX, reqY ) == 0){
+			addX = reqX;
+			addY = reqY;
+		}
+		
+		//adauga addX addY doar daca poti
+		if(maze.intersectie(this.x, this.y, addX, addY ) == 0){
+			if(devil == 0){
+				x += SPEED * addX;
+				y += SPEED * addY;
+			}else{
+				x += DEVIL_SPEED * addX;
+				y += DEVIL_SPEED * addY;
 			}
 		}
 
 	}
 
-	// afisare jucatori
+	/*
+	 * returneaza distanta acestui pacman catre ceilalti
+	 */
+	public double dist_to(Pacman pac){
+		
+		if(pac.id == this.id){
+			return -1;
+		}
+		
+		double deltax = Math.abs(this.x - pac.x);
+		double deltay = Math.abs(this.y - pac.y);
+		
+		return Math.sqrt(deltax * deltax + deltay * deltay);
+		
+	}
+	
+	/*
+	 * Desenarea jucatorului
+	 * TODO daca este devil trebuie desenat separat
+	 */
 	public void draw(Graphics2D g2d) {
-		g2d.setColor(culoare);
-		g2d.fillOval(x, y, SIZE, SIZE);
+		
+		if(devil == 0){
+			g2d.setColor(culoare);
+			g2d.fillOval(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);		
+		}
+		else{
+			//TODO ceva mai interesant
+			g2d.setColor(Color.GRAY);
+			g2d.fillRect(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);
+		}
+		
 		g2d.setColor(Color.white);
 		// centrare si afisare scor
-		g2d.drawString(Integer.toString(scor), x + SIZE / 3, y + 3 * SIZE / 4);
+		g2d.drawString(Integer.toString(scor), x + Board.DRAW_SIZE / 3, y + 3 * Board.DRAW_SIZE / 4);
 	}
 
-	public void set_directie(int dir) {
-		this.directie = dir;
+	public void req_directie(int reqX, int reqY) {
+		this.reqX = reqX;
+		this.reqY = reqY;
+	}
+
+	public void set_postion(Point respawnLocation) {
+		this.x = respawnLocation.x;
+		this.y = respawnLocation.y;
+		this.addX = 0;
+		this.addY = 0;
+		this.reqX = 0;
+		this.reqY = 0;
+		
 	}
 
 }
