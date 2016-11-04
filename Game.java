@@ -139,7 +139,7 @@ public class Game extends JPanel implements ActionListener {
 		for (Pacman pacman : jucatori) {
 			pacman.update(maze);
 		}
-		System.out.println("wtf");
+		
 		
 		Graphics2D g2d = (Graphics2D) g;
 		// deseneaza fundal
