@@ -25,7 +25,7 @@ public class Client {
         try {
             PrintStream pstream = new PrintStream(sock.getOutputStream());
             BufferedReader br =  new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pstream.println("Howdy, server!");
+            pstream.println("player1");
 
             char[] inputChars = new char[1024];
 

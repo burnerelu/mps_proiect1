@@ -2,7 +2,7 @@
 
 import socket
 import time
-
+import random
 
 class Connection:
     """
@@ -12,7 +12,7 @@ class Connection:
     # 0 = Not ready
     # 1 = Ready
     
-    def __init__(self, myid, connection, ip, port):
+    def __init__(self, myid, connection, ip, port, color):
         """
         Connection init
         """
@@ -21,6 +21,8 @@ class Connection:
         self.ip = ip
         self.port = port
         self.state = 0;
+        self.color = color;
+	self.name = ''
 
     def test(self):
         """
@@ -58,6 +60,7 @@ class PacmanServer:
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn_count = 0;
     connections = []
+    colors = ['Red', 'Green', 'Yellow', 'Blue', 'Purple']
     state = 0
  
     
@@ -91,6 +94,7 @@ class PacmanServer:
             if(rc < 0):
                 conn.id = -1
                 self.conn_count = self.conn_count - 1;
+		self.colors.append(conn.color)
         self.clean_connections()
 
     def get_id(self):
@@ -107,8 +111,43 @@ class PacmanServer:
                     sid = sid + 1;
                     break;
         return sid;
-            
 
+    def get_color(self):
+        """
+        Assigns a random color
+        """
+        color = random.choice(self.colors)
+        self.colors.remove(color)
+        return color
+
+
+    def real_name(self, name, index):
+        """
+        Returns name + (index) if index is not 0
+        """
+        if index == 0:
+            return name
+        else:
+            return name + '(' + str(index) + ')'
+
+    def assign_name(self, name, index=0):
+        """
+        Checks if chosen name is already taken
+        """
+
+        duplicate = 0
+        for conn in self.connections:
+            if conn.name == self.real_name(name, index):
+                index = index + 1
+                duplicate = 1
+                break;
+
+        if duplicate == 0:
+           return self.real_name(name, index) 
+        else:
+           return self.assign_name(name, index)
+        
+            
 
     def run(self):
         """
@@ -119,20 +158,21 @@ class PacmanServer:
                 conn, (ip, port) = self.soc.accept()
                 print "Got connection from " + str(ip) + ":" + str(port)
 
-                new_connection = Connection(self.get_id(), conn, ip, port)
+                new_connection = Connection(self.get_id(), conn, ip, port, self.get_color())
+                name = conn.recv(1024)
+		new_connection.name = self.assign_name(name)
                 self.connections.append(new_connection)
-
-                msg = conn.recv(1024)
-                print msg
-                conn.send(b'Connection accepted')
+                conn.send(new_connection.color.encode('utf-8'))
+                conn.send(new_connection.name.encode('utf-8'))
 
                 self.conn_count = self.conn_count + 1;
                 if(self.conn_count > 2):
                     self.check_connections()
                 if(self.conn_count > 2):
                     print "Bingo!"
+                    self.state = 1
                     break
-            else
+            else:
                 pass
             #TODO After-connection part
 
