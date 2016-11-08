@@ -16,13 +16,17 @@ class Connection:
         """
         Connection init
         """
+        ### Server side info
         self.id = myid
         self.connection = connection
         self.ip = ip
         self.port = port
-        self.state = 0;
+        
+        ### Client side info
+        self.status = 0;  
         self.color = color;
 	self.name = ''
+        self.state = 0; 
 
     def test(self):
         """
@@ -38,12 +42,19 @@ class Connection:
             print "Connection " + str(self.id) + " still up"
             return rc
 
+    def info(self):
+        """
+        Compose a message of connection's info
+        """
+        return self.name + ':' + self.color + ':' + str(self.status)
+
+
     def send_message(self, msg):
         """
         Send message through a socket
         """
         try:
-            sent_size = self.connection.send(msg)
+            self.connection.send(msg)
             return 0
         except socket.error:
             return -1
@@ -64,13 +75,24 @@ class PacmanServer:
     state = 0
  
     
-
     def __init__(self, address="localhost", port=24999):
         """
         Server init
         """
+        self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind((address, port))
         self.soc.listen(5)
+
+    def lobby_info(self, connection):
+        """
+        Send package of lobby info to a player
+        """
+        result = connection.info()
+        for conn in self.connections:
+            if conn is not connection:
+                result = result + ';' + conn.info()
+
+        return result
 
     def clean_connections(self):
         """
@@ -130,6 +152,14 @@ class PacmanServer:
         else:
             return name + '(' + str(index) + ')'
 
+    def send_msg(self, conn, message, msgtype):
+        """
+        Sends a message to a user
+        """
+        message = str(msgtype) + '<' + message + '>'
+        conn.connection.send(message.encode('utf-8'))
+
+
     def assign_name(self, name, index=0):
         """
         Checks if chosen name is already taken
@@ -156,19 +186,19 @@ class PacmanServer:
         while True:
             if self.state == 0:
                 conn, (ip, port) = self.soc.accept()
-                print "Got connection from " + str(ip) + ":" + str(port)
-
+                print "Connection from " + str(ip) + ":" + str(port)
                 new_connection = Connection(self.get_id(), conn, ip, port, self.get_color())
+
                 name = conn.recv(1024)
-		new_connection.name = self.assign_name(name)
+		new_connection.name = self.assign_name(name.rstrip('\n'))
                 self.connections.append(new_connection)
-                conn.send(new_connection.color.encode('utf-8'))
-                conn.send(new_connection.name.encode('utf-8'))
+                
+                self.send_msg(new_connection, self.lobby_info(new_connection), 101)
 
                 self.conn_count = self.conn_count + 1;
-                if(self.conn_count > 2):
+                if(self.conn_count > 4):
                     self.check_connections()
-                if(self.conn_count > 2):
+                if(self.conn_count > 4):
                     print "Bingo!"
                     self.state = 1
                     break
