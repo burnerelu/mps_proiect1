@@ -13,6 +13,7 @@ public class Board extends JFrame {
 	public static final int DENSITY = 40;
 	public static final int RESOLUTION = 800;
 	public static final int DRAW_SIZE = RESOLUTION / DENSITY;
+	public static final int DEVIL_TIME = 200;
 	
     public Board() {
    

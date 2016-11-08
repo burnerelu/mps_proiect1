@@ -16,6 +16,7 @@ public class Pacman {
 	int addX, addY; // increment pentru locatie
 	int reqX, reqY; // variabile pentru a cere o noua directie
 	int devil; // bun 0 sau rau 1
+	int devil_count;//cat timp este devil
 	int scor;	//scorul fiecarui jucatoru
 
 	
@@ -83,14 +84,33 @@ public class Pacman {
 	 */
 	public void draw(Graphics2D g2d) {
 		
-		if(devil == 0){
-			g2d.setColor(culoare);
+		g2d.setColor(culoare);
+		
+		if(devil == 0){	
 			g2d.fillOval(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);		
 		}
+		
 		else{
-			//TODO ceva mai interesant
-			g2d.setColor(Color.GRAY);
-			g2d.fillRect(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);
+			
+			if(addX == 0 && addY == 0){
+				g2d.fillArc(x,  y, Board.DRAW_SIZE, Board.DRAW_SIZE, 30, 300);//dreapta
+			}
+			
+			if(addX == 1 && addY == 0){
+				g2d.fillArc(x,  y, Board.DRAW_SIZE, Board.DRAW_SIZE, 30, 300);//dreapta
+			}
+			
+			if(addX == -1 && addY == 0){
+				g2d.fillArc(x,  y, Board.DRAW_SIZE, Board.DRAW_SIZE, 210, 300);//stanga
+			}
+			
+			if(addX == 0 && addY == -1){
+				g2d.fillArc(x,  y, Board.DRAW_SIZE, Board.DRAW_SIZE, 120, 300);//jos
+			}
+			
+			if(addX == 0 && addY == 1){
+				g2d.fillArc(x,  y, Board.DRAW_SIZE, Board.DRAW_SIZE, 300, 300);//sus
+			}
 		}
 		
 		g2d.setColor(Color.white);
