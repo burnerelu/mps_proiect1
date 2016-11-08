@@ -85,18 +85,19 @@ public class Game extends JPanel implements ActionListener {
 
 		// jucator verde
 		Point p1 = maze.respawnLocation();
-		jucatori.add(new Pacman(0, Color.green, p1.x, p1.y, 0, 0));
+		jucatori.add(new Pacman(0, "Alex", Color.green, p1.x, p1.y, 0, 0));
 
 		// jucator rosu
 		Point p2 = maze.respawnLocation();
-		jucatori.add(new Pacman(1, Color.red, p2.x, p2.y, 0, 0));
+		jucatori.add(new Pacman(1, "Andreea", Color.red, p2.x, p2.y, 0, 0));
 
 		// jucator turcoaz
 		Point p3 = maze.respawnLocation();
-		jucatori.add(new Pacman(2, Color.cyan, p3.x, p3.y, 0, 0));
+		jucatori.add(new Pacman(2, "Mihai",  Color.cyan, p3.x, p3.y, 0, 0));
 
 	}
 
+	
 	/*
 	 * Dupa un timp alegem un alt devil care va fi cel mai apropiat jucaotr daca
 	 * nu a fost niciun devil ales alegem unul random
@@ -146,34 +147,6 @@ public class Game extends JPanel implements ActionListener {
 			jucatori.get(devil).devil_count = Board.DEVIL_TIME;
 
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics) Se ocupa de
-	 * desenarea elementelor pe tabla de joc
-	 * 
-	 * TODO trebuie sa desenam si ecranul de lobby
-	 */
-	@Override
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-
-		Graphics2D g2d = (Graphics2D) g;
-		// deseneaza fundal
-		g2d.setColor(Color.black);
-		g2d.fillRect(0, 0, this.width, this.height);
-
-		// deseneaza labirint
-		maze.draw(g2d);
-
-		// deseneaza jucatori
-		for (Pacman pacman : jucatori) {
-			pacman.draw(g2d);
-		}
-
-		g2d.dispose(); // elibereaza resurse
 	}
 
 	private void score_update(ArrayList<Pacman> jucatori) {
@@ -278,6 +251,38 @@ public class Game extends JPanel implements ActionListener {
 
 		}
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics) Se ocupa de
+	 * desenarea elementelor pe tabla de joc
+	 * 
+	 * TODO trebuie sa desenam si ecranul de lobby
+	 */
+	@Override
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+
+		int i = 0;
+		Graphics2D g2d = (Graphics2D) g;
+		// deseneaza fundal
+		g2d.setColor(Color.black);
+		g2d.fillRect(0, 0, this.width, this.height);
+
+		// deseneaza labirint
+		maze.draw(g2d);
+
+		// deseneaza jucatori + scoruri
+		for (Pacman pacman : jucatori) {
+			pacman.draw(g2d);
+			i++;
+			g2d.drawString(pacman.nume + " " + pacman.scor, Board.RESOLUTION + 10, i * Board.DRAW_SIZE);
+		}
+
+		g2d.dispose(); // elibereaza resurse
+	}
+
 
 	@Override
 	public void actionPerformed(ActionEvent e) {

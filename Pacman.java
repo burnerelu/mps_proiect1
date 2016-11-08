@@ -11,6 +11,7 @@ import java.awt.Point;
 public class Pacman {
 
 	int id;	//identificatorul jucatorului
+	String nume;	//identificatorul jucatorului
 	Color culoare;	//culoare unica fiecarui jucator
 	int x, y; // locatia curenta a jucatorului
 	int addX, addY; // increment pentru locatie
@@ -26,10 +27,11 @@ public class Pacman {
 	/*
 	 * Constructor jucator
 	 */
-	public Pacman(int id, Color culoare, int x, int y, int devil, int scor) {
+	public Pacman(int id, String n, Color culoare, int x, int y, int devil, int scor) {
 		super();
 
 		this.id = id;
+		this.nume = n;
 		this.culoare = culoare;
 		this.x = x;
 		this.y = y;
