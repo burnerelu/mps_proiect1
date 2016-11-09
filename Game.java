@@ -19,6 +19,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import org.omg.CORBA.Current;
+
 /*
  * Orice modificare asupra codului trebuie comentata
  * Clasa Game se va ocupa 
@@ -168,7 +170,9 @@ public class Game extends JPanel implements ActionListener {
 
 				// facem respan si micsoaram respectiv marim scorul
 				curent.set_postion(maze.respawnLocation());
-				curent.scor--;
+				if(curent.scor > 0){
+					curent.scor--;
+				}
 				devil_pac.scor++;
 			}
 		}

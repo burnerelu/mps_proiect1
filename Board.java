@@ -17,10 +17,10 @@ public class Board extends JFrame {
 	
     public Board() {
    
-   	 add(new Game(RESOLUTION + 100, RESOLUTION));
+   	 add(new Game(RESOLUTION + 100, RESOLUTION + 50));
        
        setTitle("Pacman ACS");
-       setSize(RESOLUTION + 100, RESOLUTION + 22);
+       setSize(RESOLUTION + 100, RESOLUTION + 50);
        setLocationRelativeTo(null);	//centrat
        setDefaultCloseOperation(EXIT_ON_CLOSE);
        setVisible(true);        
