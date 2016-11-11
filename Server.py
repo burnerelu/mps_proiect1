@@ -31,13 +31,6 @@ class Player:
 	self.name = ''
         self.state = 0; 
 
-    def test(self):
-        """
-        Tests if the connections are still up
-        """
-
-        rc = self.send_message('555<SYN>')
-        return rc
 
     def info(self):
         """
@@ -51,7 +44,7 @@ class Player:
         Send message through a socket
         """
         try:
-            self.connection.send(msg)
+            bs = self.connection.send(msg)
             return 0
         except socket.error:
             return -1
@@ -79,9 +72,11 @@ class PacmanServer:
         Server init
         """
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.soc.bind((address, port))
         self.soc.listen(5)
         self.soc.setblocking(0)
+        
         self.epoll.register(self.soc.fileno(), select.EPOLLIN)
 
     def lobby_info(self, caller):
@@ -118,17 +113,6 @@ class PacmanServer:
                     self.players.remove(player)
                     break
 
-    def check_players(self):
-        """
-        Checks if connections from list are still up and marks them dead if not
-        """
-        for player in self.players:
-            rc = player.test()
-            if(rc < 0):
-                player.id = -1
-                self.player_count = self.player_count - 1;
-		self.colors.append(player.color)
-        self.clean_players()
 
     def get_id(self):
         """
@@ -174,8 +158,79 @@ class PacmanServer:
         """
         Sends a message to a user
         """
-        message = str(msgtype) + '<' + message + '>'
-        player.connection.send(message.encode('utf-8'))
+        message = str(msgtype) + '<' + message + '>\n'
+        rc = player.connection.send(message.encode('utf-8'))
+
+    def broadcast_lobby(self):
+        """
+        Broadcasts lobby info
+        """
+        for player in self.players:
+            try:
+                if player.name != '':
+                    rc = self.send_msg(player, self.lobby_info(player), 103)
+            except socket.error:
+                print player.name + " disconnected"
+                player.id = -1;
+                self.player_count = self.player_count - 1;
+		self.colors.append(player.color)
+        
+        self.clean_players()
+
+        
+    def ready_check(self):
+        """
+        Checks if all players are ready
+        """
+        for player in self.players:
+            if player.status == 0:
+                return False
+
+        return True
+
+
+    def recv_msg(self, player):
+        """
+        Receives a message from a player
+        """
+        message = ''
+        
+        soc = player.connection
+        try:
+            while True:
+                c = soc.recv(1)
+                if c == '\n' or c == '':
+                    break
+                else:
+                    message += c
+        except socket.error:
+            print 'Package lost'
+
+        return message
+
+    def parse_msg(self, player, message):
+        """
+        Parse message and do stuff with it
+        """
+        pieces = message.split('<')
+        
+        msgtype = pieces[0]
+        msg = pieces[1].split('>')[0]
+
+        if msgtype == "200":
+            print 'Player sent name ' + msg
+            new_name = self.assign_name(msg)
+            print 'Assigned ' + new_name
+            player.name = new_name
+        elif msgtype == "201":
+            if msg == 'ready':
+                player.status = 1
+                print 'Player ' + player.name + ' ready'
+            else:
+                player.status = 0
+                print 'Player ' + player.name + ' not ready'
+
+        message = ''
 
 
     def assign_name(self, name, index=0):
@@ -213,7 +268,7 @@ class PacmanServer:
                             if self.player_count < 5:
                                 conn, (ip, port) = self.soc.accept()
                                 conn.setblocking(0)
-                                self.epoll.register(conn.fileno(), select.EPOLLIN)
+                                self.epoll.register(conn.fileno(), select.EPOLLIN | select.EPOLLOUT)
                                 print "Player from " + str(ip) + ":" + str(port)
                                 new_player = Player(self.get_id(), conn, ip, port, conn.fileno(), self.get_color())
                                 self.players.append(new_player)
@@ -223,38 +278,32 @@ class PacmanServer:
 
                         elif event & select.EPOLLIN:
                             player = self.get_player(fileno)
-                            if player != None:
-                                msg = self.get_player(fileno).connection.recv(1024)
+                            
+                            if player != None:    
+                                msg = self.recv_msg(player)
+                                if msg != '':
+                                    self.parse_msg(player, msg)
                             else:
                                 print "Runtime error"
                                 sys.exit(1)
-                            self.epoll.modify(fileno, select.EPOLLOUT)
+                     #       self.epoll.modify(fileno, select.EPOLLOUT)
                         elif event & select.EPOLLOUT:
                             pass
                         elif event & select.EPOLLHUP:
-                            self.epoll.unregister(fileno)
-                            
-                            self.get_player(fileno).conn.close()
-                            self.get_player(fileno).id = -1
-    
-                    #self.send_msg(new_player, self.lobby_info(new_player), 101)
-                    #new_player.name = self.assign_name(name.rstrip('\n'))
-                    #self.players.append(new_player)
+                            pass
+                    
+                    self.broadcast_lobby()
 
-                    #self.send_msg(new_player, self.lobby_info(new_player), 101)
-    
-                    #self.player_count = self.player_count + 1;
-                    
-                    
-                    #if(self.player_count > 4):
-                    self.check_players()
-                    if(self.player_count > 5):
+                    if self.player_count > 5 and self.ready_check():
                         print "Bingo!"
                         self.state = 1
                         break
                 else:
                     pass
                 #TODO After-connection part
+        except KeyboardInterrupt:
+            print "\nInterrupted by user"
+
         finally:
             self.epoll.unregister(self.soc.fileno())
             self.epoll.close()

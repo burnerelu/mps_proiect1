@@ -6,7 +6,13 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 
 public class Client {
+    
     static int Connected = 0;
+    
+    public static void sendMessage(PrintStream ps, String message, int code) {
+        System.out.println("Sending " + message);
+        ps.println("" + code + "<" + message + ">\n");
+    }
     public static void main(String args[]) throws Exception {
         int rc;
         Socket sock = new Socket();
@@ -25,27 +31,33 @@ public class Client {
         try {
             PrintStream pstream = new PrintStream(sock.getOutputStream());
             BufferedReader br =  new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pstream.println("player1");
-
             char[] inputChars = new char[1024];
+            
+            sendMessage(pstream, "player1", 200);
 
-            System.out.println("Trying to read");
-            br.read(inputChars);
-            System.out.println(inputChars);
+            System.out.println("Connected to server");
+            
+            sendMessage(pstream, "ready", 201); 
+            String asdf;
+
             
             // Some things to keep the loop up
             while(true) {
-                rc = br.read(inputChars);
-                if(rc < 0) {
+
+                asdf = br.readLine();
+                
+                //rc = br.read(inputChars);
+                //if(rc < 0) {
+                if(asdf == null) {
                     System.out.println("Socket disconnected");
                     break;
                 }
-                System.out.println(inputChars);
+                System.out.println(asdf);
             }
 
             sock.close();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println("Error: Socket disconnected");
         }
 
     }
