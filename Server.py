@@ -29,14 +29,21 @@ class Player:
         self.status = 0;  
         self.color = color;
 	self.name = ''
-        self.state = 0; 
+        self.state = 0;
+        self.gameinfo = None
 
 
-    def info(self):
+    def lobby_info(self):
         """
         Compose a message of player's info
         """
         return self.name + ':' + self.color + ':' + str(self.status)
+
+    def game_info(self):
+        """
+        Compose message of current status
+        """
+        return self.color + ':' + self.gameinfo
 
 
     def send_message(self, msg):
@@ -48,7 +55,6 @@ class Player:
             return 0
         except socket.error:
             return -1
-
 
 class PacmanServer:
     """
@@ -65,6 +71,7 @@ class PacmanServer:
     players = []
     colors = ['Red', 'Green', 'Yellow', 'Blue', 'Purple']
     state = 0
+    game_map = None
  
     
     def __init__(self, address="localhost", port=24999):
@@ -83,12 +90,21 @@ class PacmanServer:
         """
         Send package of lobby info to a player
         """
-        result = caller.info()
+        result = caller.lobby_info()
         for player in self.players:
             if player is not caller:
-                result = result + ';' + player.info()
+                result = result + ';' + player.lobby_info()
 
         return result
+
+    def game_info(self, caller):
+        """
+        Compose message of all players' game info
+        """
+        result = caller.game_info()
+        for player in self.players:
+            if player is not caller:
+                result = result + ';' + player.game_info()
 
     def get_player(self, fileno):
         """
@@ -173,9 +189,33 @@ class PacmanServer:
                 print player.name + " disconnected"
                 player.id = -1;
                 self.player_count = self.player_count - 1;
-		self.colors.append(player.color)
-        
+                self.colors.append(player.color)
+                self.epoll.unregister(player.connection.fileno())
         self.clean_players()
+
+    def broadcast_game(self):
+        """
+        Broadcast game info
+        """
+
+        for player in self.players:
+            try:
+                rc = self.send_msg(player, self.game_info(player), 301)
+            except socket.error:
+                print player.name + " disconnected"
+                sys.exit(1)
+
+
+    def broadcast(self, message, code):
+        """
+        Broadcast a message
+        """
+        for player in self.players:
+            try:
+                rc = self.send_msg(player, message, code)
+            except socket.error:
+                print 'Player disconnected after ready check - shutting down'
+                sys.exit(1)
 
         
     def ready_check(self):
@@ -203,10 +243,16 @@ class PacmanServer:
                     break
                 else:
                     message += c
-        except socket.error:
-            print 'Package lost'
+        except socket.error as e:
+            print e
+          #  print 'Package lost'
 
         return message
+
+    # Message types
+    # 200 - name
+    # 201 - ready check
+    # 202 - game map 
 
     def parse_msg(self, player, message):
         """
@@ -229,6 +275,9 @@ class PacmanServer:
             else:
                 player.status = 0
                 print 'Player ' + player.name + ' not ready'
+        elif msgtype == "202":
+            print 'Map received from ' + player.name
+            self.game_map = msg
 
         message = ''
 
@@ -258,10 +307,9 @@ class PacmanServer:
         """
         try:
             while True:
+                events = self.epoll.poll(1)
                 if self.state == 0:
-                    
                     # Lobby state
-                    events = self.epoll.poll(1)
 
                     for fileno, event in events:
                         if fileno == self.soc.fileno():
@@ -286,7 +334,6 @@ class PacmanServer:
                             else:
                                 print "Runtime error"
                                 sys.exit(1)
-                     #       self.epoll.modify(fileno, select.EPOLLOUT)
                         elif event & select.EPOLLOUT:
                             pass
                         elif event & select.EPOLLHUP:
@@ -294,12 +341,48 @@ class PacmanServer:
                     
                     self.broadcast_lobby()
 
-                    if self.player_count > 5 and self.ready_check():
-                        print "Bingo!"
+                    if self.player_count > 2 and self.ready_check():
+                        print "Ready check succeeded\nWarning: disconnect will end in server shutdown\nLoading.."
+                        self.broadcast('ready', 110)
+                        # TODO: TIME.START here and count 10 seconds until map is received
                         self.state = 1
-                        break
-                else:
-                    pass
+                        # Clear statuses so ready check can be performed after map load
+                        for player in self.players:
+                            player.status = 0;
+                
+                elif self.state == 1:
+                    # Pre game
+                    for fileno, event in events:
+                        if event & select.EPOLLIN:
+                            player = self.get_player(fileno)
+                            
+                            if player != None:    
+                                msg = self.recv_msg(player)
+                                if msg != '':
+                                    self.parse_msg(player, msg)
+    
+                    if self.game_map is not None:
+                        self.broadcast(self.game_map, 120)
+
+                    if self.ready_check():
+                        print 'The game has now started'
+                        self.state = 2
+
+
+                elif self.state == 2:
+                    # Game
+                    for fileno, event in events:
+                        if event & select.EPOLLIN:
+                            player = self.get_player(fileno)
+                                
+                            if player != None:    
+                                msg = self.recv_msg(player)
+                                if msg != '':
+                                    self.parse_msg(player, msg)
+
+
+
+
                 #TODO After-connection part
         except KeyboardInterrupt:
             print "\nInterrupted by user"
