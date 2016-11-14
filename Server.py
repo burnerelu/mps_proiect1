@@ -258,7 +258,11 @@ class PacmanServer:
         """
         Parse message and do stuff with it
         """
-        pieces = message.split('<')
+	try:
+            pieces = message.split('<')
+        except IndexError:
+            print 'Wrong message format!'
+            sys.exit(1)
         
         msgtype = pieces[0]
         msg = pieces[1].split('>')[0]
