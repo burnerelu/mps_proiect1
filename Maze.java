@@ -2,6 +2,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,16 +25,25 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Maze {
 
 	int zid[][]; // matrice 0 liber 1 zid
-
-	private static final int MAZE_SIZE = Board.RESOLUTION / Board.DRAW_SIZE;
-	private static final int MARJA_DE_EROARE = 1;	//marja de eroare pentru coliziuni
+	
+	int resolution;
+	int draw_size;
+	int maze_size;
+	int marja_de_eroare;
+	
 
 	/*
 	 * constructor Labirint
 	 */
-	public Maze() {
+	public Maze(int r, int ds) {
 		
-		zid = new int[Board.RESOLUTION][Board.RESOLUTION];
+		zid = new int[r][r];
+		
+		this.draw_size = ds;
+		this.resolution = r;
+		this.maze_size = resolution / draw_size;
+		this.marja_de_eroare = 1;
+		
 		this.generate(zid);
 	}
 
@@ -48,18 +58,18 @@ public class Maze {
 		int x, y, forma;
 		
 		// generarea contur
-		for (int i = 0; i < MAZE_SIZE; i++) {
+		for (int i = 0; i < maze_size; i++) {
 			zid[i][0] = 1;
-			zid[i][MAZE_SIZE - 1] = 1;
+			zid[i][maze_size - 1] = 1;
 			zid[0][i] = 1;
-			zid[MAZE_SIZE - 1][i] = 1;
+			zid[maze_size - 1][i] = 1;
 		}	
 		
 		//generare forme
-		for (int i = 0; i < 10 * MAZE_SIZE; i++) {
+		for (int i = 0; i < 10 * maze_size; i++) {
 			
-			x = rand.nextInt(MAZE_SIZE - 6) + 2;
-			y = rand.nextInt(MAZE_SIZE - 6) + 2;
+			x = rand.nextInt(maze_size - 6) + 2;
+			y = rand.nextInt(maze_size - 6) + 2;
 			forma = rand.nextInt(3);
 
 			switch (forma) {
@@ -112,14 +122,14 @@ public class Maze {
 	 */
 	public int intersectie(int x, int y, int reqx, int reqy) {
 
-		int xstanga = (x + Board.DRAW_SIZE - MARJA_DE_EROARE + Pacman.SPEED * reqx) / Board.DRAW_SIZE;
-		int xdreapta = (x + MARJA_DE_EROARE + Pacman.SPEED * reqx) / Board.DRAW_SIZE;
+		int xstanga = (x + draw_size - marja_de_eroare + Pacman.SPEED * reqx) / draw_size;
+		int xdreapta = (x + marja_de_eroare + Pacman.SPEED * reqx) / draw_size;
 				
-		int ysus = (y + Board.DRAW_SIZE - MARJA_DE_EROARE + Pacman.SPEED * reqy) / Board.DRAW_SIZE;
-		int yjos = (y + MARJA_DE_EROARE + Pacman.SPEED * reqy) / Board.DRAW_SIZE;
+		int ysus = (y + draw_size - marja_de_eroare + Pacman.SPEED * reqy) / draw_size;
+		int yjos = (y + marja_de_eroare + Pacman.SPEED * reqy) / draw_size;
 		
-		int xcentru = (x + Board.DRAW_SIZE / 2 ) / Board.DRAW_SIZE;
-		int ycentru = (y + Board.DRAW_SIZE / 2 ) / Board.DRAW_SIZE;
+		int xcentru = (x + draw_size / 2 ) / draw_size;
+		int ycentru = (y + draw_size / 2 ) / draw_size;
 		
 		//daca e zid in vreun colt trebuie sa returnam 1 intersectie
 		if (zid[xstanga][yjos] == 1 || zid[xstanga][ysus] == 1 || zid[xdreapta][yjos] == 1 
@@ -139,23 +149,22 @@ public class Maze {
 		
 		Random rand = new Random();
 		//incepem cautarea pentru un loc de spawn dintr=o zona random de mijloc
-		//TODO aici i si j sa inceapa de la 0 si sa nu generam peste alt jucator
-		int i = rand.nextInt(MAZE_SIZE / 2) + MAZE_SIZE / 8;
-		int j = rand.nextInt(MAZE_SIZE / 2) + MAZE_SIZE / 8;
+		int i = rand.nextInt(maze_size / 2) + maze_size / 8;
+		int j = rand.nextInt(maze_size / 2) + maze_size / 8;
 		
-		for (; i < MAZE_SIZE; i++) {
-			for (; j < MAZE_SIZE; j++) {
-				System.out.println(i + " " + j);
-				if(intersectie(i * Board.DRAW_SIZE, j * Board.DRAW_SIZE, 0, 0) == 0){	//daca nu intersecteaza
-					System.out.println(i * Board.DRAW_SIZE + " " + j * Board.DRAW_SIZE);
-					return new Point( i * Board.DRAW_SIZE, j * Board.DRAW_SIZE);
+		for (; i < maze_size; i++) {
+			for (; j < maze_size; j++) {
+				
+				if(intersectie(i * draw_size, j * draw_size, 0, 0) == 0){	//daca nu intersecteaza
+					
+					return new Point( i * draw_size, j * draw_size);
 				}
 			}
 		}
 		
 		System.out.println("NU AM GASIT LOC DE SPAWN");
 		//in caz ca nu gasim un loc disponibil facem respawn in stanga sus
-		return new Point(Board.DRAW_SIZE, Board.DRAW_SIZE);
+		return new Point(draw_size, draw_size);
 	}
 
 	/* 
@@ -168,16 +177,16 @@ public class Maze {
 		g2d.setStroke(new BasicStroke(5));
 
 		// deseneaza contur
-		g2d.drawLine(0, 0, Board.WIDTH, 0);
-		g2d.drawLine(0, 0, 0, Board.HEIGHT);
-		g2d.drawLine(0, Board.HEIGHT, Board.WIDTH, Board.HEIGHT);
-		g2d.drawLine(Board.WIDTH, 0, Board.WIDTH, Board.HEIGHT);
+		g2d.drawLine(0, 0, Window.WIDTH, 0);
+		g2d.drawLine(0, 0, 0, Window.HEIGHT);
+		g2d.drawLine(0, Window.HEIGHT, Window.WIDTH, Window.HEIGHT);
+		g2d.drawLine(Window.WIDTH, 0, Window.WIDTH, Window.HEIGHT);
 
-		for (int i = 0; i < MAZE_SIZE; i++) {
-			for (int j = 0; j < MAZE_SIZE; j++) {
+		for (int i = 0; i < maze_size; i++) {
+			for (int j = 0; j < maze_size; j++) {
 
 				if (zid[i][j] == 1) {
-					g2d.fillRoundRect(i * Board.DRAW_SIZE, j * Board.DRAW_SIZE, Board.DRAW_SIZE, Board.DRAW_SIZE,10,10);
+					g2d.fillRoundRect(i * draw_size, j * draw_size, draw_size, draw_size,10,10);
 				}
 			}
 

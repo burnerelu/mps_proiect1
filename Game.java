@@ -19,41 +19,50 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import org.omg.CORBA.Current;
+
 /*
  * Orice modificare asupra codului trebuie comentata
- * Clasa Game se va ocupa 
+ * Clasa Game resposabila de logica jocului 
  */
 public class Game extends JPanel implements ActionListener {
 
-	int width, height;
-	ArrayList<Pacman> jucatori;
-	Maze maze;
-	int stare; // 0 cauta server 1 lobby 2 joc
-
+	public final int SET_NAME = 0;
+	public final int LOBBY = 1;
+	public final int JOC = 2;
+	
 	public final int RIGHT = 1;
 	public final int UP = 2;
 	public final int LEFT = 3;
 	public final int DOWN = 4;
-	private static final int GAME_SPEED = 30; //cu cat mai mic cu atat mai repede
+	private static final int GAME_SPEED = 10; // cu cat mai mic cu atat mai repede
+	
+	
+	ArrayList<Pacman> jucatori;
+	Maze maze;
+	int screen; // 0 cauta server 1 lobby 2 joc
+	int resolution;
+	
+
 	private Timer timer;
 
-	int devil;	//cine e devil actual
+	int devil; // cine e devil actual
+	int devil_time;
 	
 	public Game() {
 		super();
 	}
 
 	/*
-	 * Constructor joc
-	 * Initilizeaza 
+	 * Constructor joc Initilizeaza
 	 * 
-	 * TODO initializarea trebuie facuta in functie de datele primite in urma ecranului 
-	 * LOBBY
 	 */
-	public Game(int w, int h) {
+	public Game(int resolution, Maze m, ArrayList<Pacman> pacs, int dt) {
 		super();
- 
-		addKeyListener(new Controller());		// adaugam un obiect ce se ocupa cu controlul jocului (asculta tastatura)
+
+		addKeyListener(new Controller()); // adaugam un obiect ce se ocupa cu
+											// controlul jocului (asculta
+											// tastatura)
 		setFocusable(true);
 		setDoubleBuffered(true);
 
@@ -61,135 +70,101 @@ public class Game extends JPanel implements ActionListener {
 		this.timer = new Timer(GAME_SPEED, this);
 		this.timer.start();
 
-		this.devil = 1;	//TODO = -1
-		this.maze = new Maze();
+		this.devil = 1; // TODO = -1
+		this.screen = 2;	//TODO serverul seteaza starea de desenare
+		this.resolution = resolution;
+		this.maze = m;
+		this.jucatori = pacs;
 		
-		this.width = w;
-		this.height = h;
-		
-		initPlayers();
+		this.devil_time = dt;
 
 	}
 
-	/*
-	 * Metoda ce initializeaza jucatorii
-	 * TODO trebuie legata cu informatiile primite de la ecranul de LOBBY
-	 */
-	private void initPlayers() {
-		
-		jucatori = new ArrayList<Pacman>();
-		// (int id, Color culoare, int x, int y, int stare, int scor)
-		
-		
-		//jucator verde
-		Point p1 = maze.respawnLocation();
-		jucatori.add(new Pacman(0, Color.green, p1.x, p1.y, 0, 8));
-		
-		//jucator rosu
-		Point p2 = maze.respawnLocation();
-		jucatori.add(new Pacman(1, Color.cyan, p2.x, p2.y, 1, 0));
-		
-
-	}
 
 	/*
-	 * Dupa un timp alegem un alt devil care va fi cel mai apropiat jucaotr
-	 * daca nu a fost niciun devil ales alegem unul random
+	 * Dupa un timp alegem un alt devil care va fi cel mai apropiat jucaotr daca
+	 * nu a fost niciun devil ales alegem unul random
 	 */
-	public void choose_next_devil(){
-		
-		if(devil == -1){
+	public void choose_next_devil() {
+
+		if (devil == -1) {
 			devil = new Random().nextInt(jucatori.size());
 			jucatori.get(devil).devil = 1;
-			
-		}else{	//daca cineva este deja devil
-			
+			jucatori.get(devil).devil_count = devil_time;
+
+		} else { // daca cineva este deja devil
+
 			double dist;
 			double min_dist = 9000;
-			int closest = devil ;
+			int closest = devil;
 			Pacman devil_pac = jucatori.get(devil), curent;
-			
+
+			/*
+			 * daca nu este inca timpul sa alegem un alt devil decrementam
+			 * contorul lui si iesim din functie
+			 */
+			if (devil_pac.devil_count != 0) {
+				devil_pac.devil_count--;
+				return;
+
+			}
+
+			/*
+			 * Daca contorul lui a ajuns la 0 atunci aflam care este cel mai
+			 * apropiat jucator si il facem devil iar pe devil il facem bun
+			 */
 			for (int i = 0; i < jucatori.size(); i++) {
 				curent = jucatori.get(i);
 				dist = devil_pac.dist_to(curent);
-				if(curent.id != devil_pac.id && dist < min_dist){
+				if (curent.id != devil_pac.id && dist < min_dist) {
 					min_dist = dist;
 					closest = i;
 				}
 			}
-			
+
+			jucatori.get(devil).devil = 0;
+
 			devil = closest;
+
 			jucatori.get(devil).devil = 1;
-			
-		}
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
-	 * Se ocupa de desenarea elementelor pe tabla de joc
-	 * 
-	 * TODO trebuie sa desenam si ecranul de lobby
-	 */
-	@Override
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
+			jucatori.get(devil).devil_count = devil_time;
 
-		score_update(jucatori);
-		for (Pacman pacman : jucatori) {
-			pacman.update(maze);
 		}
-		
-		
-		Graphics2D g2d = (Graphics2D) g;
-		// deseneaza fundal
-		g2d.setColor(Color.black);
-		g2d.fillRect(0, 0, this.width, this.height);
-
-		// deseneaza labirint
-		maze.draw(g2d);
-		
-		// deseneaza jucatori
-		for (Pacman pacman : jucatori) {
-			pacman.draw(g2d);
-		}
-
-		g2d.dispose(); // elibereaza resurse
 	}
 
 	private void score_update(ArrayList<Pacman> jucatori) {
-		
-		if(devil ==	-1){	//daca devil inca nu a fost ales
+
+		if (devil == -1) { // daca devil inca nu a fost ales
 			return;
 		}
-		
+
 		Pacman devil_pac = jucatori.get(devil);
 		Pacman curent;
-		
-		//verificam dinstanta intre devil si ceilalti jucatori
+
+		// verificam dinstanta intre devil si ceilalti jucatori
 		for (int i = 0; i < jucatori.size(); i++) {
-			
+
 			curent = jucatori.get(i);
-			
-			//daca distanta este suficient de mica
-			if ( curent.id != devil_pac.id && devil_pac.dist_to(curent) < Board.DRAW_SIZE){
-				
-				//facem respan si micsoaram respectiv marim scorul
+
+			// daca distanta este suficient de mica
+			if (curent.id != devil_pac.id && devil_pac.dist_to(curent) < curent.draw_size) {
+
+				// facem respan si micsoaram respectiv marim scorul
 				curent.set_postion(maze.respawnLocation());
-				curent.scor--;
+				if(curent.scor > 0){
+					curent.scor--;
+				}
 				devil_pac.scor++;
 			}
 		}
-	
+
 	}
 
 	class Controller extends KeyAdapter {
 
-
-				
-					 
 		/*
-		 * 			 (non-Javadoc)
+		 * (non-Javadoc)
+		 * 
 		 * @see java.awt.event.KeyAdapter#keyPressed(java.awt.event.KeyEvent)
 		 * 
 		 * Controlul jocului
@@ -216,7 +191,7 @@ public class Game extends JPanel implements ActionListener {
 			case KeyEvent.VK_DOWN:
 				jucatori.get(0).req_directie(0, 1);
 				break;
-				
+
 			// W A S D
 			case KeyEvent.VK_D:
 				jucatori.get(1).req_directie(1, 0);
@@ -230,7 +205,20 @@ public class Game extends JPanel implements ActionListener {
 			case KeyEvent.VK_S:
 				jucatori.get(1).req_directie(0, 1);
 				break;
-				
+
+			// I J K L
+			case KeyEvent.VK_L:
+				jucatori.get(2).req_directie(1, 0);
+				break;
+			case KeyEvent.VK_I:
+				jucatori.get(2).req_directie(0, -1);
+				break;
+			case KeyEvent.VK_J:
+				jucatori.get(2).req_directie(-1, 0);
+				break;
+			case KeyEvent.VK_K:
+				jucatori.get(2).req_directie(0, 1);
+				break;
 
 			default:
 				break;
@@ -245,13 +233,79 @@ public class Game extends JPanel implements ActionListener {
 			if (key == Event.LEFT || key == Event.RIGHT || key == Event.UP || key == Event.DOWN) {
 
 			}
-			
-			
+
 		}
 	}
+	
+	private void paint_set_name_screen(Graphics g){
+		//TODO 5 Alex
+	}
+	
+	private void paint_lobby_screen(Graphics g){
+		//TODO 4 Alex
+	}
+	
+	private void paint_game_screen(Graphics g){
+		
+		int i = 0;
+		Graphics2D g2d = (Graphics2D) g;
+		// deseneaza fundal
+		g2d.setColor(Color.black);
+		g2d.fillRect(0, 0, resolution + 100, resolution + 50);
+
+		// deseneaza labirint
+		maze.draw(g2d);
+
+		// deseneaza jucatori + scoruri in dreapta
+		for (Pacman pacman : jucatori) {
+			pacman.draw(g2d);
+			i++;
+			g2d.setColor(pacman.culoare);
+			g2d.drawString(pacman.nume + " " + pacman.scor, resolution + 10, i * pacman.draw_size);
+		}
+
+		g2d.dispose(); // elibereaza resurse
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics) Se ocupa de
+	 * desenarea elementelor pe tabla de joc
+	 */
+	@Override
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+
+		switch (screen) {
+		case SET_NAME:
+			paint_set_name_screen(g);
+			break;
+		case LOBBY:
+			paint_lobby_screen(g);
+			break;
+
+		case JOC:
+			paint_game_screen(g);
+			break;
+
+		default:
+			break;
+		}
+		
+	}
+
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+
+		//TODO 3 Paul de adaugat comunicare cu serverul aici
+		
+		score_update(jucatori);
+		choose_next_devil();
+		for (Pacman pacman : jucatori) {
+			pacman.update(maze);
+		}
 
 		repaint();
 

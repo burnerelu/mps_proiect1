@@ -11,29 +11,34 @@ import java.awt.Point;
 public class Pacman {
 
 	int id;	//identificatorul jucatorului
+	String nume;	//identificatorul jucatorului
 	Color culoare;	//culoare unica fiecarui jucator
 	int x, y; // locatia curenta a jucatorului
 	int addX, addY; // increment pentru locatie
 	int reqX, reqY; // variabile pentru a cere o noua directie
 	int devil; // bun 0 sau rau 1
+	int devil_count;//cat timp este devil
 	int scor;	//scorul fiecarui jucatoru
-
+	int draw_size;
+	int devil_speed; 
 	
 	public static final int SPEED = 2;	//factor de viteza
-	public static final int DEVIL_SPEED = 2;	//factor de viteza
-
+	
 	/*
 	 * Constructor jucator
 	 */
-	public Pacman(int id, Color culoare, int x, int y, int devil, int scor) {
+	public Pacman(int id, String n, Color culoare, int x, int y, int devil, int scor, int ds, int devil_s) {
 		super();
 
 		this.id = id;
+		this.nume = n;
 		this.culoare = culoare;
 		this.x = x;
 		this.y = y;
 		this.devil = devil;
 		this.scor = scor;
+		this.draw_size = ds;
+		this.devil_speed = devil_s;
 	}
 
 	/*
@@ -51,11 +56,11 @@ public class Pacman {
 		//adauga addX addY doar daca poti
 		if(maze.intersectie(this.x, this.y, addX, addY ) == 0){
 			if(devil == 0){
-				x += SPEED * addX;
-				y += SPEED * addY;
+				x += addX;
+				y += addY;
 			}else{
-				x += DEVIL_SPEED * addX;
-				y += DEVIL_SPEED * addY;
+				x += SPEED * addX ;
+				y += SPEED * addY ;
 			}
 		}
 
@@ -79,23 +84,41 @@ public class Pacman {
 	
 	/*
 	 * Desenarea jucatorului
-	 * TODO daca este devil trebuie desenat separat
 	 */
 	public void draw(Graphics2D g2d) {
 		
-		if(devil == 0){
-			g2d.setColor(culoare);
-			g2d.fillOval(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);		
+		g2d.setColor(culoare);
+		
+		if(devil == 0){	
+			g2d.fillOval(x, y, draw_size, draw_size);		
 		}
+		
 		else{
-			//TODO ceva mai interesant
-			g2d.setColor(Color.GRAY);
-			g2d.fillRect(x, y, Board.DRAW_SIZE, Board.DRAW_SIZE);
+			
+			if(addX == 0 && addY == 0){
+				g2d.fillArc(x,  y, draw_size, draw_size, 30, 300);//dreapta
+			}
+			
+			if(addX == 1 && addY == 0){
+				g2d.fillArc(x,  y, draw_size, draw_size, 30, 300);//dreapta
+			}
+			
+			if(addX == -1 && addY == 0){
+				g2d.fillArc(x,  y, draw_size, draw_size, 210, 300);//stanga
+			}
+			
+			if(addX == 0 && addY == -1){
+				g2d.fillArc(x,  y, draw_size, draw_size, 120, 300);//jos
+			}
+			
+			if(addX == 0 && addY == 1){
+				g2d.fillArc(x,  y, draw_size, draw_size, 300, 300);//sus
+			}
 		}
 		
 		g2d.setColor(Color.white);
 		// centrare si afisare scor
-		g2d.drawString(Integer.toString(scor), x + Board.DRAW_SIZE / 3, y + 3 * Board.DRAW_SIZE / 4);
+		g2d.drawString(Integer.toString(scor), x + draw_size / 3, y + 3 * draw_size / 4);
 	}
 
 	public void req_directie(int reqX, int reqY) {
