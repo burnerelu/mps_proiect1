@@ -348,7 +348,7 @@ class PacmanServer:
                     
                     self.broadcast_lobby()
 
-                    if self.player_count > 2 and self.ready_check():
+                    if self.player_count > 5 and self.ready_check():
                         print "Ready check succeeded\nWarning: disconnect will end in server shutdown\nLoading.."
                         self.broadcast('ready', 110)
                         # TODO: TIME.START here and count 10 seconds until map is received
@@ -389,8 +389,9 @@ class PacmanServer:
 
 
 
-
+                time.sleep (50.0 / 1000.0);
                 #TODO After-connection part
+
         except KeyboardInterrupt:
             print "\nInterrupted by user"
 
