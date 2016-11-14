@@ -30,7 +30,7 @@ class Player:
         self.color = color;
 	self.name = 'anonymous'
         self.state = 0;
-        self.gameinfo = None
+        self.gameinfo = ''
 
 
     def lobby_info(self):
@@ -166,9 +166,10 @@ class PacmanServer:
 
     # Sent message types
     # 
-    # 100 - SYN (are you still alive?)
-    # 101 - Lobby info 
-    # 
+    # 103 - Lobby info
+    # 110 - All ready
+    # 120 - Game map
+    # 301 - Game info
 
     def send_msg(self, player, message, msgtype):
         """
@@ -283,6 +284,8 @@ class PacmanServer:
             elif msgtype == "202":
                 print 'Map received from ' + player.name
                 self.game_map = msg
+            elif msgtype == "401":
+                self.game_info = msg
 
             message = ''
         except:
@@ -348,7 +351,7 @@ class PacmanServer:
                     
                     self.broadcast_lobby()
 
-                    if self.player_count > 5 and self.ready_check():
+                    if self.player_count > 4 and self.ready_check():
                         print "Ready check succeeded\nWarning: disconnect will end in server shutdown\nLoading.."
                         self.broadcast('ready', 110)
                         # TODO: TIME.START here and count 10 seconds until map is received
@@ -386,10 +389,11 @@ class PacmanServer:
                                 msg = self.recv_msg(player)
                                 if msg != '':
                                     self.parse_msg(player, msg)
+                    self.broadcast_game() 
 
 
 
-                time.sleep (50.0 / 1000.0);
+                time.sleep (25.0 / 1000.0);
                 #TODO After-connection part
 
         except KeyboardInterrupt:
