@@ -28,7 +28,7 @@ class Player:
         ### Client side info
         self.status = 0;  
         self.color = color;
-	self.name = ''
+	self.name = 'anonymous'
         self.state = 0;
         self.gameinfo = None
 
