@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.InputStreamReader;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Graphics;
+import java.awt.Point;
+
 import java.util.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,7 +25,40 @@ import java.io.BufferedReader;
 
 
 public class Client {
-	 public static void sendMessage(PrintStream ps, String message, int code) {
+	public static Pacman get_pacman(Player p, int x, int y) {
+		/*
+		int id;	//identificatorul jucatorului
+		String nume;	//identificatorul jucatorului
+		Color culoare;	//culoare unica fiecarui jucator
+		int x, y; // locatia curenta a jucatorului
+		int devil; // bun 0 sau rau 1
+		int scor;	//scorul fiecarui jucatoru
+		int draw_size;
+		int devil_speed; 
+		 */
+		Color c;
+		int id;
+		String pac_name = p.name;
+		switch (p.color) {
+		case "Red": c = Color.RED;
+					id = 1;
+		case "Green": c = Color.GREEN;
+					id = 2;
+		case "Blue": c = Color.BLUE;
+					id = 3;
+		case "Purple": c = Color.PINK;
+					id = 4;
+		case "Yellow": c = Color.YELLOW;
+					id = 5;
+		default: c = Color.GRAY;
+					id = -1;
+		}
+		
+		Pacman pac = new Pacman(id, pac_name, c, x, y, 0, 0, 20, 1);
+		
+		return pac;
+	}
+	public static void sendMessage(PrintStream ps, String message, int code) {
 	        System.out.println("Sending " + message);
 	        ps.println("" + code + "<" + message + ">\n");
 	}
@@ -78,7 +114,8 @@ public class Client {
     	/*
     	   	*Connection window
     	*/
-   
+    	Maze maze = new Maze(800, 20);
+    	ArrayList<Pacman> pacs = new ArrayList<Pacman>();
     	JFrame frame = new JFrame("Connect");
     	frame.setLocationRelativeTo(null);
     	frame.setSize(300,120);
@@ -197,8 +234,6 @@ public class Client {
     		for (int i = 0; i < 4; i++) {
     			players[i] = new Player();
     		}
-    		//Player player1 = new Player("test", "blue", "not ready", p, c, r, l);
-    		//player1.add_to_frame(lobby_frame, -1);
     		
 
     		while(game_started == 0 && leave_game == 0) {
@@ -282,38 +317,77 @@ public class Client {
     			
     			if(all_ready(me, players)) {
     				if (me.color == "Blue") {
-    					//String map_to_send = encode_map("Insert map here");
-    					//send_message(map);
+    					
+    					String map_to_send = encode_map(maze.zid);
+    					sendMessage(pstream, map_to_send, 202);
     				}
     				else {
-    					message = br.readLine();
-    					//map = decode_map(message);
+    					message = br.readLine();   					
+    					maze.zid = decode_map(message.split("<")[1].split(">")[0]);
     				}
     				/*
     				 * Send ready to server, all players ready
-    				 * sendMessage(pstream, "ready", 201); 
+    				 * 
     				 */
+    				sendMessage(pstream, "ready", 201); 
     				game_started = 1;
-    				//start game
+    				
+    				Point point = maze.respawnLocation();
+    				pacs.add(get_pacman(me, point.x, point.y));
+    				for (int i = 0; i < players.length; i++) {
+    					point = maze.respawnLocation();
+    					pacs.add(get_pacman(players[i], point.x, point.y));
+    				}
+    				Game my_g = new Game(800, maze, pacs, 1000);
+    				Window my_w = new Window(900, 850, my_g);
+    				EventQueue.invokeLater(new Runnable() {
+
+    					@Override
+    					public void run() {
+    						my_w.setVisible(true);
+    					}
+    				});
     			}
     		}
     		
     		
-            //pstream.println("Howdy, server!");
-
-           
-
-            //System.out.println("Trying to read");
-            //br.read(inputChars);
-            //System.out.println(inputChars);
             
             // Some things to keep the loop up
             while(true) {
-            	/*
-            	 * TODO: send color, position, state, score
-            	 * TODO: recv color, position, state
-            	 */
+            	
+            	String message_to_send = "" + me.color + ":" + pacs.get(0).x + ":" + pacs.get(0).y + ":" +
+            							pacs.get(0).devil + ":" + pacs.get(0).scor;
+            	sendMessage(pstream, message_to_send, 401);
+            	
                 message = br.readLine();
+                message = message.split("<")[1].split(">")[0];
+                String[] player_infos = message.split(";");
+                String[] my_info = player_infos[0].split(":");
+                pacs.get(0).x = Integer.parseInt(my_info[1]);
+                pacs.get(0).y = Integer.parseInt(my_info[2]);
+                pacs.get(0).devil = Integer.parseInt(my_info[3]);
+                pacs.get(0).scor = Integer.parseInt(my_info[4]);
+                for (int i = 1; i < player_infos.length; i++) {
+                	String[] players_i = player_infos[i].split(":");
+                	for (int k = 1; k < pacs.size(); k++) {
+                		Color player_color;
+                		switch(players_i[0]) {
+                		case "Red": player_color = Color.RED;
+                		case "Green": player_color = Color.GREEN;
+                		case "Blue": player_color = Color.BLUE;
+                		case "Purple": player_color = Color.PINK;
+                		case "Yellow": player_color = Color.YELLOW;
+                		default: player_color = Color.GRAY;
+                		}
+                		if (player_color == pacs.get(k).culoare) {
+                			 pacs.get(k).x = Integer.parseInt(players_i[1]);
+                             pacs.get(k).y = Integer.parseInt(players_i[2]);
+                             pacs.get(k).devil = Integer.parseInt(players_i[3]);
+                             pacs.get(k).scor = Integer.parseInt(players_i[4]);
+                		}
+                	}
+                	
+                }
                 if(message == null) {
                     System.out.println("Socket disconnected");
                     break;
