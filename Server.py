@@ -183,9 +183,13 @@ class PacmanServer:
         """
         for player in self.players:
             try:
-                if player.name != '':
-                    rc = self.send_msg(player, self.lobby_info(player), 103)
-            except socket.error:
+                rc = self.send_msg(player, self.lobby_info(player), 103)
+            except socket.error, msg:
+		errorcode = msg[0]
+                if errorcode == 11:
+                    pass
+                else:
+                    print 'Error - ' + str(msg)
                 print player.name + " disconnected"
                 player.id = -1;
                 self.player_count = self.player_count - 1;
@@ -260,30 +264,29 @@ class PacmanServer:
         """
 	try:
             pieces = message.split('<')
-        except IndexError:
-            print 'Wrong message format!'
-            sys.exit(1)
-        
-        msgtype = pieces[0]
-        msg = pieces[1].split('>')[0]
 
-        if msgtype == "200":
-            print 'Player sent name ' + msg
-            new_name = self.assign_name(msg)
-            print 'Assigned ' + new_name
-            player.name = new_name
-        elif msgtype == "201":
-            if msg == 'ready':
-                player.status = 1
-                print 'Player ' + player.name + ' ready'
-            else:
-                player.status = 0
-                print 'Player ' + player.name + ' not ready'
-        elif msgtype == "202":
-            print 'Map received from ' + player.name
-            self.game_map = msg
+            msgtype = pieces[0]
+            msg = pieces[1].split('>')[0]
 
-        message = ''
+            if msgtype == "200":
+                print 'Player sent name ' + msg
+                new_name = self.assign_name(msg)
+                print 'Assigned ' + new_name
+                player.name = new_name
+            elif msgtype == "201":
+                if msg == 'ready':
+                    player.status = 1
+                    print 'Player ' + player.name + ' ready'
+                else:
+                    player.status = 0
+                    print 'Player ' + player.name + ' not ready'
+            elif msgtype == "202":
+                print 'Map received from ' + player.name
+                self.game_map = msg
+
+            message = ''
+        except:
+            pass
 
 
     def assign_name(self, name, index=0):
