@@ -59,7 +59,7 @@ public class Client {
 		return pac;
 	}
 	public static void sendMessage(PrintStream ps, String message, int code) {
-	        System.out.println("Sending " + message);
+	        //System.out.println("Sending " + message);
 	        ps.println("" + code + "<" + message + ">\n");
 	}
 	 
@@ -71,14 +71,14 @@ public class Client {
 			if (players[i].ready_state == "Ready") 
 				ready_count++;
 		}
-		if (ready_count == 5)
+		if (ready_count == 1)
 			return true;
 		else
 			return false;
 	}
 	
 	public static String encode_map(int[][] map) {
-		String separator = ", ";
+		String separator = "";
 	    StringBuffer result = new StringBuffer();
 
 	    for (int i = 0; i < map.length; i++) {
@@ -94,12 +94,9 @@ public class Client {
 	
 	public static int[][] decode_map(String map) {
 		String[] lines = map.split("\n");
-		int[][] new_map = new int[40][40];
+		int[][] new_map = new int[800][800];
 		for (int i = 0; i < lines.length; i++) {
-			String[] columns = lines[i].split(",");
-			for (int j = 0; j < columns.length; j++) {
-				new_map[i][j] = Integer.parseInt(columns[j]);	
-			}
+			System.arraycopy(lines[i], 0, new_map[i], 0, 800);
 		}
 		return new_map;
 	}
@@ -241,96 +238,106 @@ public class Client {
     			lobby_frame.repaint();
     			
     			message = br.readLine();
-       			message = message.split("<")[1].split(">")[0];
-    			String[] players_info = message.split(";");
-    			String[] my_info = players_info[0].split(":");
-    			if (me.name != my_info[0]) {
-    				me.set_name(my_info[0]);
-    			}
-    			if (me.color != my_info[1]) {
-    				me.set_color(my_info[1]);
-    			}
-    			String ready = "";
-    			if (Integer.parseInt(my_info[2]) == 1) {
-    				ready = "Ready"; 
-    			}
-    			else {
-    				ready = "Not ready";
-    			}
-    			int my_position = me.get_position(me.color);
-    			if (ready != "Ready") {
-    				JCheckBox check = new JCheckBox("Ready");
-            		check.setBounds(r[my_position][0], r[my_position][1], r[my_position][2], r[my_position][3]);
-            		check.addActionListener(new ActionListener() {
-            			public void actionPerformed(ActionEvent e) {
-            				state_ready = 1;
-            				sendMessage(pstream, "ready", 201); 
-            			}     		      
-            		});
-            		
-            		lobby_frame.add(check);
-    			}
-    			JButton leaveButton = new JButton("Leave");
-        		leaveButton.setBounds(l[my_position][0], l[my_position][1], l[my_position][2], l[my_position][3]);
-        		leaveButton.addActionListener(new ActionListener() {
-        			public void actionPerformed(ActionEvent e) {
-        				leave_game = 1;
-        				lobby_frame.setVisible(false);
-        				lobby_frame.dispose();
-        			}
-        		});
-        		lobby_frame.add(leaveButton);
-    			JLabel name_label = new JLabel(me.name);
-    			name_label.setBounds(n[my_position][0], n[my_position][1], n[my_position][2], n[my_position][3]);
-    			lobby_frame.remove(name_label);
-    			lobby_frame.add(name_label);
     			
-    			for (int i = 1; i < players_info.length; i++) {
-    				int player_exists = 0;
-    				String[] info = players_info[i].split(":");
-    				Player player = new Player();
-    				player.set_name(info[0]);
-    				player.set_color(info[1]);
-    				int position = player.get_position(player.color);
-    				player.set_position(n[position], r[position], l[position]);
-    				if (Integer.parseInt(info[2]) == 1) {
-        				ready = "Ready";
-        			}
-        			else {
-        				ready = "Not ready";
-        			}
-    				player.set_state(ready);
-    				int j;
-    				for(j = 0; j < players.length; j++) {
-    					if (players[j].name == player.name) {
-    						players[i].set_state(player.ready_state);
-    						player.add_to_frame(lobby_frame);
-    						break;
-    					}
-    					if (players[j].name == "") {
-    						player.add_to_frame(lobby_frame);
-    						break;
-    					}
+    			String[] code_message = message.split("<");
+    			int code = Integer.parseInt(code_message[0]);
+       			if (code == 103) {
+       				
+       				message = code_message[1].split(">")[0];
+       			
+       			
+       				String[] players_info = message.split(";");
+       				String[] my_info = players_info[0].split(":");
+       				if (!me.name.equals(my_info[0])) {
+       					me.set_name(my_info[0]);
+       				}
+       				if (!me.color.equals(my_info[1])) {
+       					me.set_color(my_info[1]);
+       				}
+       				String ready = "";
+       				if (Integer.parseInt(my_info[2]) == 1) {
+       					ready = "Ready"; 
+       				}
+       				else {
+       					ready = "Not ready";
+       				}
+       				int my_position = me.get_position(me.color);
+       				if (!ready.equals("Ready")) {
+       					JCheckBox check = new JCheckBox("Ready");
+       					check.setBounds(r[my_position][0], r[my_position][1], r[my_position][2], r[my_position][3]);
+       					check.addActionListener(new ActionListener() {
+       						public void actionPerformed(ActionEvent e) {
+       							state_ready = 1;
+       							sendMessage(pstream, "ready", 201); 
+       						}     		      
+       					});
+            		
+       					lobby_frame.add(check);
+       				}
+       				JButton leaveButton = new JButton("Leave");
+       				leaveButton.setBounds(l[my_position][0], l[my_position][1], l[my_position][2], l[my_position][3]);
+       				leaveButton.addActionListener(new ActionListener() {
+       					public void actionPerformed(ActionEvent e) {
+       						leave_game = 1;
+       						lobby_frame.setVisible(false);
+       						lobby_frame.dispose();
+       					}
+       				});
+       				lobby_frame.add(leaveButton);
+       				JLabel name_label = new JLabel(me.name);
+       				name_label.setBounds(n[my_position][0], n[my_position][1], n[my_position][2], n[my_position][3]);
+       				lobby_frame.remove(name_label);
+       				lobby_frame.add(name_label);
+    			
+       				for (int i = 1; i < players_info.length; i++) {
+       					int player_exists = 0;
+       					String[] info = players_info[i].split(":");
+       					Player player = new Player();
+       					player.set_name(info[0]);
+       					player.set_color(info[1]);
+       					int position = player.get_position(player.color);
+       					player.set_position(n[position], r[position], l[position]);
+       					if (Integer.parseInt(info[2]) == 1) {
+       						ready = "Ready";
+       					}
+       					else {
+       						ready = "Not ready";
+       					}
+       					player.set_state(ready);
+       					int j;
+       					for(j = 0; j < players.length; j++) {
+       						if (players[j].name.equals(player.name)) {
+       							players[i].set_state(player.ready_state);
+       							player.add_to_frame(lobby_frame);
+       							break;
+       						}
+       						if (players[j].name.equals("")) {
+       							player.add_to_frame(lobby_frame);
+       							break;
+       						}
+       					}
+    				
+       				}
+       			}
+       			else if( code == 110 || code == 120) {
+       				/*if(code == 110) {
+       					if (me.color.equals("Blue")) {
+       						String map_to_send = encode_map(maze.zid);
+       						sendMessage(pstream, map_to_send, 202);
+       					}
+       				}
+    				else if (code == 120) {
+    					message = br.readLine();   					
+    					maze.zid = decode_map(message.split("<")[1].split(">")[0]);   					
     				}
     				
-    			}
-    			
-    			if(all_ready(me, players)) {
-    				if (me.color == "Blue") {
-    					
-    					String map_to_send = encode_map(maze.zid);
-    					sendMessage(pstream, map_to_send, 202);
-    				}
-    				else {
-    					message = br.readLine();   					
-    					maze.zid = decode_map(message.split("<")[1].split(">")[0]);
-    				}
-    				/*
     				 * Send ready to server, all players ready
     				 * 
     				 */
+    				lobby_frame.setVisible(false);
+    				lobby_frame.dispose();
     				sendMessage(pstream, "ready", 201); 
-    				game_started = 1;
+    				
     				
     				Point point = maze.respawnLocation();
     				pacs.add(get_pacman(me, point.x, point.y));
@@ -347,6 +354,7 @@ public class Client {
     						my_w.setVisible(true);
     					}
     				});
+    				break;
     			}
     		}
     		
@@ -360,44 +368,56 @@ public class Client {
             	sendMessage(pstream, message_to_send, 401);
             	
                 message = br.readLine();
-                message = message.split("<")[1].split(">")[0];
-                String[] player_infos = message.split(";");
-                String[] my_info = player_infos[0].split(":");
-                pacs.get(0).x = Integer.parseInt(my_info[1]);
-                pacs.get(0).y = Integer.parseInt(my_info[2]);
-                pacs.get(0).devil = Integer.parseInt(my_info[3]);
-                pacs.get(0).scor = Integer.parseInt(my_info[4]);
-                for (int i = 1; i < player_infos.length; i++) {
-                	String[] players_i = player_infos[i].split(":");
-                	for (int k = 1; k < pacs.size(); k++) {
-                		Color player_color;
-                		switch(players_i[0]) {
-                		case "Red": player_color = Color.RED;
-                		case "Green": player_color = Color.GREEN;
-                		case "Blue": player_color = Color.BLUE;
-                		case "Purple": player_color = Color.PINK;
-                		case "Yellow": player_color = Color.YELLOW;
-                		default: player_color = Color.GRAY;
-                		}
-                		if (player_color == pacs.get(k).culoare) {
-                			 pacs.get(k).x = Integer.parseInt(players_i[1]);
-                             pacs.get(k).y = Integer.parseInt(players_i[2]);
-                             pacs.get(k).devil = Integer.parseInt(players_i[3]);
-                             pacs.get(k).scor = Integer.parseInt(players_i[4]);
-                		}
+                
+                //System.out.println(message);
+                String[] code_message = message.split("<");
+                int code = Integer.parseInt(code_message[0]);
+                message = code_message[1].split(">")[0];
+                if (code == 301) {
+                	try {
+                		String[] player_infos = message.split(";");
+                		String[] my_info = player_infos[0].split(":");
+                			//pacs.get(0).x = Integer.parseInt(my_info[1]);
+                			//pacs.get(0).y = Integer.parseInt(my_info[2]);
+                			//pacs.get(0).devil = Integer.parseInt(my_info[3]);
+                			//pacs.get(0).scor = Integer.parseInt(my_info[4]);
+                		    System.out.println(pacs.size());
+                			for (int i = 1; i < player_infos.length; i++) {
+                				String[] players_i = player_infos[i].split(":");
+                				for (int k = 1; k < pacs.size(); k++) {
+                					Color player_color;
+                					switch(players_i[0]) {
+                					case "Red": player_color = Color.RED;
+                					case "Green": player_color = Color.GREEN;
+                					case "Blue": player_color = Color.BLUE;
+                					case "Purple": player_color = Color.PINK;
+                					case "Yellow": player_color = Color.YELLOW;
+                					default: player_color = Color.GRAY;
+                					}
+                					if (player_color.equals(pacs.get(k).culoare)) {
+                						pacs.get(k).x = Integer.parseInt(players_i[1]);
+                						pacs.get(k).y = Integer.parseInt(players_i[2]);
+                						pacs.get(k).devil = Integer.parseInt(players_i[3]);
+                						pacs.get(k).scor = Integer.parseInt(players_i[4]);
+                						
+                					}
+                				}
+                			}
                 	}
-                	
+                		catch (IndexOutOfBoundsException e) {
+                			continue;
+                		}
                 }
-                if(message == null) {
-                    System.out.println("Socket disconnected");
-                    break;
-                }
+              	 if(pacs.get(0).scor == 10) {
+              		 break;
+              	 }
+                
                 
             }
-
+           
             sock.close();
         } catch (IOException e) {
-            System.out.println(e);
+           // System.out.println(e);
         }
 
     }
