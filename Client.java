@@ -16,7 +16,7 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Point;
-
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,20 +36,30 @@ public class Client {
 		int draw_size;
 		int devil_speed; 
 		 */
+		 
+		 /* Fixed all grey players
+		 	Added break to each case
+		 	Thanks Andreea
+		 */
 		Color c;
 		int id;
 		String pac_name = p.name;
 		switch (p.color) {
 		case "Red": c = Color.RED;
 					id = 1;
+					break;
 		case "Green": c = Color.GREEN;
 					id = 2;
+					break;
 		case "Blue": c = Color.BLUE;
 					id = 3;
+					break;
 		case "Purple": c = Color.PINK;
 					id = 4;
+					break;
 		case "Yellow": c = Color.YELLOW;
 					id = 5;
+					break;
 		default: c = Color.GRAY;
 					id = -1;
 		}
@@ -150,11 +160,11 @@ public class Client {
         int rc;
         Socket sock = new Socket();
         while(Connected == 0) {
-        	System.out.println(attemp_conn);
+        	//System.err.println(attemp_conn);
         	if (attemp_conn == 1) {
         		try {
         			Connected = 1;
-        			sock = new Socket("10.3.16.68", 24999);
+        			sock = new Socket("localhost", 24999);
         		}
         		catch (ConnectException e) {
         			Connected = 0;
@@ -227,10 +237,7 @@ public class Client {
     		Player me = new Player();
     		me.set_name(name);
     		
-    		Player[] players = new Player[4];
-    		for (int i = 0; i < 4; i++) {
-    			players[i] = new Player();
-    		}
+    		ArrayList<Player> players = new ArrayList<Player>();
     		
 
     		while(game_started == 0 && leave_game == 0) {
@@ -305,35 +312,75 @@ public class Client {
        					}
        					player.set_state(ready);
        					int j;
-       					for(j = 0; j < players.length; j++) {
-       						if (players[j].name.equals(player.name)) {
-       							players[i].set_state(player.ready_state);
-       							player.add_to_frame(lobby_frame);
+       					players.add(player);
+       					
+       					for(j = 0; j < players.size() - 1; j++) {
+       						if (players.get(j).name.equals(player.name)) {	
+       							player_exists = 1;
        							break;
-       						}
-       						if (players[j].name.equals("")) {
-       							player.add_to_frame(lobby_frame);
-       							break;
-       						}
+       						}    						
        					}
-    				
+    					if (player_exists == 1) {
+    						players.remove(player);
+    					}
+    					else {
+    						player.add_to_frame(lobby_frame);
+    					}
        				}
        			}
        			else if( code == 110 || code == 120) {
-       				/*if(code == 110) {
-       					if (me.color.equals("Blue")) {
-       						String map_to_send = encode_map(maze.zid);
-       						sendMessage(pstream, map_to_send, 202);
-       					}
-       				}
-    				else if (code == 120) {
-    					message = br.readLine();   					
-    					maze.zid = decode_map(message.split("<")[1].split(">")[0]);   					
-    				}
-    				
-    				 * Send ready to server, all players ready
-    				 * 
-    				 */
+       				
+    				if(code == 110) {
+    					if (me.color.equals("Blue")) {
+    						String map_to_send = "";
+    						for (int i = 0; i < maze.walls.size(); i++) {
+    							map_to_send += String.valueOf(maze.walls.get(i).x) + " ";
+    							map_to_send += String.valueOf(maze.walls.get(i).y) + " ";
+    							map_to_send += String.valueOf(maze.walls.get(i).forma) + " ";
+    							map_to_send += ";";
+    						}
+    						
+    						
+    						sendMessage(pstream, map_to_send, 202);
+    					}
+    					else {
+    						
+    						for (int i = 0; i < 800; i++) {
+    							for(int j = 0; j < 800; j++) {
+    								maze.zid[i][j] = 0;
+    							}
+    						}
+    						for (int i = 0; i < 40; i++) {
+								maze.zid[i][0] = 1;
+								maze.zid[i][40 - 1] = 1;
+								maze.zid[0][i] = 1;
+								maze.zid[40 - 1][i] = 1;
+							}	
+							
+							String map_to_use = br.readLine();
+							map_to_use = map_to_use.split("<")[1].split(">")[0];
+							String[] walls = map_to_use.split(";");
+							for (int i = 0; i < walls.length; i++) {
+								String[] things = walls[i].split(" ");
+								int x = Integer.parseInt(things[0]);
+								int y = Integer.parseInt(things[1]);
+								int forma = Integer.parseInt(things[2]);
+								if (x < 2 || y < 2)
+									continue;
+								
+								boolean aux;
+								switch (forma) {
+								case 0: aux = maze.tryputWall(x - 1, y, x + 1, y);;
+										break;
+								case 1: aux = maze.tryputWall(x, y - 1, x, y + 1);
+										break;
+								case 2: aux = maze.tryputWall(x - 1, y - 1, x + 1, y + 1);
+										break;
+								}
+							}
+						}
+					}
+					TimeUnit.SECONDS.sleep(5);
     				lobby_frame.setVisible(false);
     				lobby_frame.dispose();
     				sendMessage(pstream, "ready", 201); 
@@ -341,9 +388,9 @@ public class Client {
     				
     				Point point = maze.respawnLocation();
     				pacs.add(get_pacman(me, point.x, point.y));
-    				for (int i = 0; i < players.length; i++) {
+    				for (int i = 0; i < players.size(); i++) {
     					point = maze.respawnLocation();
-    					pacs.add(get_pacman(players[i], point.x, point.y));
+    					pacs.add(get_pacman(players.get(i), point.x, point.y));
     				}
     				Game my_g = new Game(800, maze, pacs, 1000);
     				Window my_w = new Window(900, 850, my_g);
@@ -381,18 +428,23 @@ public class Client {
                 			//pacs.get(0).y = Integer.parseInt(my_info[2]);
                 			//pacs.get(0).devil = Integer.parseInt(my_info[3]);
                 			//pacs.get(0).scor = Integer.parseInt(my_info[4]);
-                		    System.out.println(pacs.size());
                 			for (int i = 1; i < player_infos.length; i++) {
                 				String[] players_i = player_infos[i].split(":");
                 				for (int k = 1; k < pacs.size(); k++) {
                 					Color player_color;
                 					switch(players_i[0]) {
                 					case "Red": player_color = Color.RED;
+                								break;
                 					case "Green": player_color = Color.GREEN;
+                								break;
                 					case "Blue": player_color = Color.BLUE;
+                								break;
                 					case "Purple": player_color = Color.PINK;
+                								break;
                 					case "Yellow": player_color = Color.YELLOW;
+                								break;
                 					default: player_color = Color.GRAY;
+                								break;
                 					}
                 					if (player_color.equals(pacs.get(k).culoare)) {
                 						pacs.get(k).x = Integer.parseInt(players_i[1]);

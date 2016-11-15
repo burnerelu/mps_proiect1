@@ -29,7 +29,7 @@ public class Maze {
 	int draw_size;
 	int maze_size;
 	int marja_de_eroare;
-	
+	ArrayList<Wall> walls = new ArrayList<Wall>();
 
 	/*
 	 * constructor Labirint
@@ -73,17 +73,27 @@ public class Maze {
 
 			switch (forma) {
 			case 0: // zid orizontal ---
-				
-				tryputWall(x - 1, y, x + 1, y);
+
+				if(tryputWall(x - 1, y, x + 1, y)) {
+
+					Wall wall = new Wall(x, y, 0);
+					walls.add(wall);
+				}
 				break;
 			case 1: // zid vertical |
 
-				tryputWall(x, y - 1, x, y + 1);
+				if(tryputWall(x, y - 1, x, y + 1)) {
+					Wall wall = new Wall(x, y, 1);
+					walls.add(wall);
+				}
 
 				break;
 			case 2: // patrat 3x3
 
-				tryputWall(x - 1, y - 1, x + 1, y + 1);
+				if(tryputWall(x - 1, y - 1, x + 1, y + 1)) {
+					Wall wall = new Wall(x, y, 2);
+					walls.add(wall);
+				}
 
 				break;
 
@@ -98,12 +108,12 @@ public class Maze {
 	 * Verifica zona libera apoi 
 	 * pune 1 in matricea definita de x_start y_start respectiva x_end y_end
 	 */
-	private void tryputWall(int x_start, int y_start, int x_end, int y_end) {
+	public boolean tryputWall(int x_start, int y_start, int x_end, int y_end) {
 
 		for (int i = x_start - 1; i < x_end + 2; i++) {
 			for (int j = y_start - 1; j < y_end + 2; j++) {
 				if (zid[i][j] == 1) { // daca e zid nu putem pune return
-					return;
+					return false;
 				}
 			}
 		}
@@ -113,6 +123,7 @@ public class Maze {
 				zid[i][j] = 1;
 			}
 		}
+		return true;
 	}
 
 	/* 
