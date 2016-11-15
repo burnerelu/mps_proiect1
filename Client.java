@@ -313,15 +313,17 @@ public class Client {
        					player.set_state(ready);
        					int j;
        					players.add(player);
-       					
+       					player_exists = 0;
        					for(j = 0; j < players.size() - 1; j++) {
        						if (players.get(j).name.equals(player.name)) {	
+       							players.get(j).set_state(player.ready_state);
+       							player.add_to_frame(lobby_frame);
        							player_exists = 1;
        							break;
        						}    						
        					}
     					if (player_exists == 1) {
-    						players.remove(player);
+    						players.remove(players.get(players.size() - 1));
     					}
     					else {
     						player.add_to_frame(lobby_frame);
@@ -332,6 +334,7 @@ public class Client {
        				
     				if(code == 110) {
     					if (me.color.equals("Blue")) {
+    						
     						String map_to_send = "";
     						for (int i = 0; i < maze.walls.size(); i++) {
     							map_to_send += String.valueOf(maze.walls.get(i).x) + " ";
@@ -380,12 +383,13 @@ public class Client {
 							}
 						}
 					}
+					sendMessage(pstream, "ready", 201); 
 					TimeUnit.SECONDS.sleep(5);
     				lobby_frame.setVisible(false);
     				lobby_frame.dispose();
-    				sendMessage(pstream, "ready", 201); 
     				
     				
+
     				Point point = maze.respawnLocation();
     				pacs.add(get_pacman(me, point.x, point.y));
     				for (int i = 0; i < players.size(); i++) {
@@ -426,8 +430,8 @@ public class Client {
                 		String[] my_info = player_infos[0].split(":");
                 			//pacs.get(0).x = Integer.parseInt(my_info[1]);
                 			//pacs.get(0).y = Integer.parseInt(my_info[2]);
-                			//pacs.get(0).devil = Integer.parseInt(my_info[3]);
-                			//pacs.get(0).scor = Integer.parseInt(my_info[4]);
+                			pacs.get(0).devil = Integer.parseInt(my_info[3]);
+                			pacs.get(0).scor = Integer.parseInt(my_info[4]);
                 			for (int i = 1; i < player_infos.length; i++) {
                 				String[] players_i = player_infos[i].split(":");
                 				for (int k = 1; k < pacs.size(); k++) {
