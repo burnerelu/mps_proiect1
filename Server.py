@@ -28,7 +28,7 @@ class Player:
         ### Client side info
         self.status = 0;  
         self.color = color;
-	self.name = 'anonymous'
+	self.name = '.'
         self.state = 0;
         self.gameinfo = ''
 
@@ -38,13 +38,6 @@ class Player:
         Compose a message of player's info
         """
         return self.name + ':' + self.color + ':' + str(self.status)
-
-    def game_info(self):
-        """
-        Compose message of current status
-        """
-        return self.color + ':' + self.gameinfo
-
 
     def send_message(self, msg):
         """
@@ -101,10 +94,11 @@ class PacmanServer:
         """
         Compose message of all players' game info
         """
-        result = caller.game_info()
+        result = caller.gameinfo
         for player in self.players:
             if player is not caller:
-                result = result + ';' + player.game_info()
+                result = result + ';' + player.gameinfo
+        return result
 
     def get_player(self, fileno):
         """
@@ -175,7 +169,7 @@ class PacmanServer:
         """
         Sends a message to a user
         """
-        message = str(msgtype) + '<' + message + '>\n'
+        message = str(msgtype) + '<' + str(message) + '>\n'
         rc = player.connection.send(message.encode('utf-8'))
 
     def broadcast_lobby(self):
@@ -206,9 +200,13 @@ class PacmanServer:
         for player in self.players:
             try:
                 rc = self.send_msg(player, self.game_info(player), 301)
-            except socket.error:
-                print player.name + " disconnected"
-                sys.exit(1)
+            except socket.error, msg:
+                errorcode = msg[0]
+                if errorcode == 11:
+                    pass
+                else:
+                    print player.name + " disconnected"
+                    sys.exit(1)
 
 
     def broadcast(self, message, code):
@@ -285,7 +283,7 @@ class PacmanServer:
                 print 'Map received from ' + player.name
                 self.game_map = msg
             elif msgtype == "401":
-                self.game_info = msg
+                player.gameinfo = msg
 
             message = ''
         except:
