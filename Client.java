@@ -60,16 +60,16 @@ public class Client {
 		// TODO 1 Paul
 		int resolution = 800;
 		int draw_size = 20;
-		int devil_time = 1000;	//cat timp ramane devil
+		int devil_time = 1000;	//10 cat timp ramane devil
 		int devil_speed = 1;
-		
+		int terminare_joc = 10000;	//100 de secunde 
 		
 		//initializare joc
 		Maze my_m = new Maze(resolution, draw_size);
 		ArrayList<Pacman> pacs = new ArrayList<Pacman>();
 		Client.initPlayers(pacs, my_m, draw_size, devil_speed);
 
-		Game my_g = new Game(resolution, my_m, pacs, devil_time);
+		Game my_g = new Game(resolution, my_m, pacs, devil_time, terminare_joc);
 		Window my_w = new Window(resolution + 100, resolution + 50, my_g);
 		
 		

@@ -42,7 +42,7 @@ public class Game extends JPanel implements ActionListener {
 	Maze maze;
 	int screen; // 0 cauta server 1 lobby 2 joc
 	int resolution;
-	
+	int terminare_joc;
 
 	private Timer timer;
 
@@ -57,7 +57,7 @@ public class Game extends JPanel implements ActionListener {
 	 * Constructor joc Initilizeaza
 	 * 
 	 */
-	public Game(int resolution, Maze m, ArrayList<Pacman> pacs, int dt) {
+	public Game(int resolution, Maze m, ArrayList<Pacman> pacs, int dt, int terminare_joc) {
 		super();
 
 		addKeyListener(new Controller()); // adaugam un obiect ce se ocupa cu
@@ -77,7 +77,8 @@ public class Game extends JPanel implements ActionListener {
 		this.jucatori = pacs;
 		
 		this.devil_time = dt;
-
+		this.terminare_joc = terminare_joc;
+		
 	}
 
 
@@ -241,18 +242,30 @@ public class Game extends JPanel implements ActionListener {
 		//TODO 5 Alex
 	}
 	
+	
 	private void paint_lobby_screen(Graphics g){
 		//TODO 4 Alex
 	}
 	
 	private void paint_game_screen(Graphics g){
 		
+	
 		int i = 0;
 		Graphics2D g2d = (Graphics2D) g;
 		// deseneaza fundal
 		g2d.setColor(Color.black);
 		g2d.fillRect(0, 0, resolution + 100, resolution + 50);
 
+		if(terminare_joc < 0){
+			for (Pacman pacman : jucatori) {
+				i++;
+				g2d.setColor(pacman.culoare);
+				g2d.drawString(pacman.nume + " " + pacman.scor, resolution/2, resolution/2 + i * pacman.draw_size - 50);
+			}
+			
+			return;
+		}
+		
 		// deseneaza labirint
 		maze.draw(g2d);
 
@@ -309,6 +322,7 @@ public class Game extends JPanel implements ActionListener {
 
 		repaint();
 
+		--terminare_joc;
 	}
 
 }
